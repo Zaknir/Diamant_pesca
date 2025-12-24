@@ -27,9 +27,11 @@
             outline: none;
         }
         
+        /* Classi applicate ora all'intero paragrafo */
         .hazard { color: #d32f2f; font-weight: bold; }
         .treasure { color: #2e7d32; font-weight: bold; }
         .info { color: #1976d2; }
+        p { margin: 0; } /* Rimuove margini extra nel log */
     </style>
 </head>
 <body>
@@ -44,7 +46,7 @@
              aria-live="polite" 
              aria-label="Risultato estrazione"
              tabindex="-1">
-            Premi il pulsante per iniziare.
+            <p>Premi il pulsante per iniziare.</p>
         </div>
     </div>
 
@@ -75,8 +77,9 @@
             }
         }
 
-        function logMessage(text) {
-            extractionLog.innerHTML = text;
+        function logMessage(text, className = "") {
+            // Crea un unico paragrafo con il testo e la classe opzionale
+            extractionLog.innerHTML = `<p class="${className}">${text}</p>`;
             extractionLog.focus();
         }
 
@@ -103,28 +106,32 @@
             tunnel.push(card);
             let roundEnd = false;
             let logText = "";
+            let logClass = "";
 
             if (card.type === 'hazard') {
                 const hazardName = card.value;
                 currentHazardCounts[hazardName] = (currentHazardCounts[hazardName] || 0) + 1;
+                logClass = "hazard";
                 
                 if (currentHazardCounts[hazardName] === 2) {
                     roundEnd = true;
                     removedHazards[hazardName]++;
-                    logText = `<span class="hazard">🚨 DOPPIO PERICOLO ${hazardName.toUpperCase()}! Spedizione fallita.</span>`;
+                    logText = `DOPPIO PERICOLO ${hazardName.toUpperCase()}! Spedizione fallita.`;
                 } else {
-                    logText = `<span class="hazard">⚠️ Pericolo: ${hazardName} (1a volta).</span>`;
+                    logText = `Pericolo: ${hazardName} (1a volta).`;
                 }
             } else if (card.type === 'treasure') {
                 const gems = card.value;
                 const perPlayer = Math.floor(gems / numPlayers);
                 const table = gems % numPlayers;
-                logText = `<span class="treasure">💎 Tesoro: ${gems} gemme.</span> ${perPlayer} a testa, ${table} sul tavolo.`;
+                logClass = "treasure";
+                logText = `Tesoro: ${gems} gemme. ${perPlayer} a testa, ${table} sul tavolo.`;
             } else if (card.type === 'artifact') {
-                logText = `<span class="info">✨ Artefatto trovato (Valore ${card.gemValue}).</span>`;
+                logClass = "info";
+                logText = `Artefatto trovato (Valore ${card.gemValue}).`;
             }
 
-            logMessage(logText);
+            logMessage(logText, logClass);
             if (roundEnd) endExpedition();
             updateUI();
         }
@@ -137,7 +144,7 @@
             currentHazardCounts = {};
             roundActive = true;
             
-            logMessage(`<span class="info">Inizio Spedizione ${expeditionNumber}.</span> Mazzo pronto.`);
+            logMessage(`Inizio Spedizione ${expeditionNumber}. Mazzo pronto.`, "info");
             updateUI();
         }
 
