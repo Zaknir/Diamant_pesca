@@ -27,11 +27,10 @@
             outline: none;
         }
         
-        /* Classi applicate ora all'intero paragrafo */
         .hazard { color: #d32f2f; font-weight: bold; }
         .treasure { color: #2e7d32; font-weight: bold; }
         .info { color: #1976d2; }
-        p { margin: 0; } /* Rimuove margini extra nel log */
+        p { margin: 0; }
     </style>
 </head>
 <body>
@@ -42,9 +41,6 @@
         <button id="primary-action-button">Inizia Nuova Spedizione (1)</button>
 
         <div id="extraction-log" 
-             role="log" 
-             aria-live="polite" 
-             aria-label="Risultato estrazione"
              tabindex="-1">
             <p>Premi il pulsante per iniziare.</p>
         </div>
@@ -78,8 +74,8 @@
         }
 
         function logMessage(text, className = "") {
-            // Crea un unico paragrafo con il testo e la classe opzionale
             extractionLog.innerHTML = `<p class="${className}">${text}</p>`;
+            // Il focus() forzerà lo screen reader a leggere solo questo contenuto una volta sola
             extractionLog.focus();
         }
 
@@ -122,8 +118,6 @@
                 }
             } else if (card.type === 'treasure') {
                 const gems = card.value;
-                const perPlayer = Math.floor(gems / numPlayers);
-                const table = gems % numPlayers;
                 logClass = "treasure";
                 logText = `Tesoro: ${gems} gemme. Dividetele equamente tra i giocatori e lasciate l'avanzo nella stanza`;
             } else if (card.type === 'artifact') {
