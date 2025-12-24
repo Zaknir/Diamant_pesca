@@ -15,7 +15,6 @@
 
         #primary-action-button { background-color: #4CAF50; color: white; }
         
-        /* Stile per l'area di estrazione (solo l'ultima carta) */
         #extraction-log {
             border: 2px solid #2196F3;
             padding: 20px;
@@ -25,24 +24,12 @@
             border-radius: 5px;
             font-size: 1.2em;
             text-align: center;
-            outline: none; /* Rimuove il bordo blu standard al focus */
+            outline: none;
         }
         
         .hazard { color: #d32f2f; font-weight: bold; }
         .treasure { color: #2e7d32; font-weight: bold; }
         .info { color: #1976d2; }
-
-        /* Nascondi visivamente ma lascia leggibile agli screen reader */
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            border: 0;
-        }
     </style>
 </head>
 <body>
@@ -52,10 +39,10 @@
       
         <button id="primary-action-button">Inizia Nuova Spedizione (1)</button>
 
-        <h2 class="sr-only">Risultato Estrazione</h2>
         <div id="extraction-log" 
              role="log" 
              aria-live="polite" 
+             aria-label="Risultato estrazione"
              tabindex="-1">
             Premi il pulsante per iniziare.
         </div>
@@ -80,7 +67,6 @@
             treasures: [1, 2, 3, 4, 5, 5, 7, 7, 9, 11, 11, 13, 14, 15, 17],
             ARTIFACT_VALUES: [5, 7, 8, 10, 12],
         };
-        let foundArtifacts = []; 
 
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
@@ -89,14 +75,8 @@
             }
         }
 
-        /**
-         * Logica aggiornata: pulisce il log e sposta il focus per l'accessibilità.
-         */
         function logMessage(text) {
-            // Pulizia del log precedente (mostra solo l'ultima carta)
             extractionLog.innerHTML = text;
-            
-            // Sposta il focus sull'elemento per gli screen reader
             extractionLog.focus();
         }
 
@@ -108,7 +88,6 @@
                 for (let i = 0; i < remaining; i++) newDeck.push({ type: 'hazard', value: h });
             });
             
-            // Aggiunta artefatto della spedizione corrente
             if (expeditionNumber <= 5) {
                 newDeck.push({ type: 'artifact', gemValue: BASE_DECK_CONFIG.ARTIFACT_VALUES[expeditionNumber-1] });
             }
@@ -158,7 +137,7 @@
             currentHazardCounts = {};
             roundActive = true;
             
-            logMessage(`<span class="info">Inizio Spedizione ${expeditionNumber}.</span> Mazzo pronto con ${deck.length} carte.`);
+            logMessage(`<span class="info">Inizio Spedizione ${expeditionNumber}.</span> Mazzo pronto.`);
             updateUI();
         }
 
@@ -171,7 +150,7 @@
                 primaryActionButton.textContent = 'Gioco Terminato';
                 primaryActionButton.disabled = true;
             } else if (roundActive) {
-                primaryActionButton.textContent = `Estrai Prossima Carta (Residue: ${deck.length})`;
+                primaryActionButton.textContent = `Estrai Prossima Carta (Mazzo: ${deck.length})`;
             } else {
                 primaryActionButton.textContent = `Inizia Spedizione ${expeditionNumber + 1}`;
             }
