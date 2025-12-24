@@ -125,10 +125,10 @@
                 const perPlayer = Math.floor(gems / numPlayers);
                 const table = gems % numPlayers;
                 logClass = "treasure";
-                logText = `Tesoro: ${gems} gemme. ${perPlayer} a testa, ${table} sul tavolo.`;
+                logText = `Tesoro: ${gems} gemme. Dividetele equamente tra i giocatori e lasciate l'avanzo nella stanza`;
             } else if (card.type === 'artifact') {
                 logClass = "info";
-                logText = `Artefatto trovato (Valore ${card.gemValue}).`;
+                logText = `Artefatto trovato (Valore ${card.gemValue}). Lasciatelo nello stanza`;
             }
 
             logMessage(logText, logClass);
