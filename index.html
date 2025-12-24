@@ -3,117 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diamant - Logica Estrazione</title>
+    <title>Diamant - Accessibile</title>
     <style>
-        body {
-            font-family: sans-serif;
-            margin: 10px;
-            background-color: #f0f0f0;
-            color: #333;
+        body { font-family: sans-serif; margin: 20px; background-color: #f0f0f0; }
+        .container { max-width: 500px; margin: 0 auto; padding: 20px; background-color: white; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        
+        button { 
+            padding: 15px; margin: 10px 0; border: 1px solid #333; border-radius: 5px; 
+            cursor: pointer; font-weight: bold; width: 100%; font-size: 1.1em;
         }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        button, select {
-            padding: 10px;
-            margin: 5px 0;
-            border: 1px solid #333;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            width: 100%;
-            transition: background-color 0.2s;
-        }
-        #primary-action-button {
-            background-color: #4CAF50; /* Verde */
-            color: white;
-        }
-        #primary-action-button:disabled {
-            background-color: #ccc;
-            color: #666;
-            cursor: not-allowed;
-        }
+
+        #primary-action-button { background-color: #4CAF50; color: white; }
+        
+        /* Stile per l'area di estrazione (solo l'ultima carta) */
         #extraction-log {
-            border: 1px solid #ccc;
-            padding: 10px;
+            border: 2px solid #2196F3;
+            padding: 20px;
             margin-top: 15px;
-            min-height: 150px;
-            max-height: 40vh;
-            overflow-y: auto;
-            background-color: #fafafa;
-            border-radius: 5px;
-            font-size: 0.9em;
-        }
-        .log-entry {
-            border-left: 4px solid #aaa;
-            padding: 8px;
-            margin-bottom: 8px;
+            min-height: 80px;
             background-color: #fff;
-            border-radius: 4px;
+            border-radius: 5px;
+            font-size: 1.2em;
+            text-align: center;
+            outline: none; /* Rimuove il bordo blu standard al focus */
         }
-        .log-info { border-color: #2196F3; } /* Blu */
-        .log-treasure { border-color: #4CAF50; } /* Verde */
-        .log-hazard { border-color: #f44336; } /* Rosso */
-        .log-end { border-color: #000; }
+        
+        .hazard { color: #d32f2f; font-weight: bold; }
+        .treasure { color: #2e7d32; font-weight: bold; }
+        .info { color: #1976d2; }
+
+        /* Nascondi visivamente ma lascia leggibile agli screen reader */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Diamant: Logica Minimal</h1>
+        <h1>Diamant: Logica Accessibile</h1>
       
-        <div style="margin-bottom: 15px;">
-            <button id="primary-action-button">Inizia Nuova Spedizione (1)</button>
-        </div>
+        <button id="primary-action-button">Inizia Nuova Spedizione (1)</button>
 
-        <h2>Registro Estrazioni</h2>
-        <div id="extraction-log">
-            <p style="color: #999;">Premi "Inizia Nuova Spedizione" per iniziare.</p>
+        <h2 class="sr-only">Risultato Estrazione</h2>
+        <div id="extraction-log" 
+             role="log" 
+             aria-live="polite" 
+             tabindex="-1">
+            Premi il pulsante per iniziare.
         </div>
     </div>
 
     <script>
-        // Variabili globali per lo stato del gioco
         let deck = [];
         let tunnel = [];
         let currentHazardCounts = {};
         let roundActive = false;
         let expeditionNumber = 0;
         const MAX_EXPEDITIONS = 5;
-        const numPlayers = 4; // Fissato per semplicità
+        const numPlayers = 4;
 
-        // Oggetto per tracciare i pericoli rimossi permanentemente
-        let removedHazards = {
-            'Masso': 0,
-            'Serpente': 0,
-            'Ragno': 0,
-            'Fuoco': 0,
-            'Vapore': 0
-        };
+        let removedHazards = { 'Masso': 0, 'Serpente': 0, 'Ragno': 0, 'Fuoco': 0, 'Vapore': 0 };
         const MAX_HAZARDS_PER_TYPE = 3;
 
-        // Elementi DOM
         const primaryActionButton = document.getElementById('primary-action-button');
         const extractionLog = document.getElementById('extraction-log');
 
-        // Composizione Base del Mazzo (Hai estratto la logica)
         const BASE_DECK_CONFIG = {
-            // 15 Carte Tesoro
             treasures: [1, 2, 3, 4, 5, 5, 7, 7, 9, 11, 11, 13, 14, 15, 17],
-            // 5 Artefatti (solo per tracciare l'inclusione futura, ma non necessari per la logica di estrazione)
             ARTIFACT_VALUES: [5, 7, 8, 10, 12],
         };
         let foundArtifacts = []; 
 
-
-        /**
-         * Mescola un array usando l'algoritmo Fisher-Yates.
-         */
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -122,199 +90,97 @@
         }
 
         /**
-         * Funzione di utility per registrare i messaggi nel Log Dettagliato.
+         * Logica aggiornata: pulisce il log e sposta il focus per l'accessibilità.
          */
-        function logMessage(text, colorKey) {
-            const logEntry = document.createElement('div');
-            logEntry.className = `log-entry log-${colorKey}`;
+        function logMessage(text) {
+            // Pulizia del log precedente (mostra solo l'ultima carta)
+            extractionLog.innerHTML = text;
             
-            // Il log di questo esempio è stato semplificato per NON resettarsi,
-            // ma per aggiungere voci al fondo (comportamento più standard per un log).
-            extractionLog.appendChild(logEntry);
-            
-            // Crea un contenitore per il testo se il log è vuoto
-            if (extractionLog.innerHTML.includes('Premi "Inizia Nuova Spedizione"')) {
-                extractionLog.innerHTML = '';
-            }
-            logEntry.innerHTML = text;
-
-            // Scorre in basso per mostrare l'ultimo messaggio
-            extractionLog.scrollTop = extractionLog.scrollHeight;
+            // Sposta il focus sull'elemento per gli screen reader
+            extractionLog.focus();
         }
 
-        /**
-         * Crea e mescola il mazzo completo per una nuova spedizione.
-         * La logica include l'esclusione dei pericoli rimossi permanentemente.
-         */
         function createAndShuffleDeck() {
             let newDeck = [];
+            BASE_DECK_CONFIG.treasures.forEach(v => newDeck.push({ type: 'treasure', value: v }));
+            Object.keys(removedHazards).forEach(h => {
+                const remaining = MAX_HAZARDS_PER_TYPE - (removedHazards[h] || 0);
+                for (let i = 0; i < remaining; i++) newDeck.push({ type: 'hazard', value: h });
+            });
             
-            // 1. Aggiungi Carte Tesoro
-            BASE_DECK_CONFIG.treasures.forEach(value => {
-                newDeck.push({ type: 'treasure', value: value });
-            });
-
-            // 2. Aggiungi Carte Pericolo (sottraendo quelle rimosse permanentemente)
-            const hazardTypes = Object.keys(removedHazards);
-            hazardTypes.forEach(hazardName => {
-                const maxCount = MAX_HAZARDS_PER_TYPE;
-                // Calcola quante carte restano dopo la rimozione permanente
-                const countRemaining = maxCount - (removedHazards[hazardName] || 0);
-                
-                for (let i = 0; i < countRemaining; i++) {
-                    newDeck.push({ type: 'hazard', value: hazardName });
-                }
-            });
-
-            // 3. Aggiungi Carte Artefatto (semplificate: aggiunge solo quelli non trovati)
-            const artifactsToInclude = BASE_DECK_CONFIG.ARTIFACT_VALUES
-                .slice(0, expeditionNumber)
-                .filter(value => !foundArtifacts.includes(value));
-
-            artifactsToInclude.forEach(value => {
-                newDeck.push({ type: 'artifact', gemValue: value });
-            });
+            // Aggiunta artefatto della spedizione corrente
+            if (expeditionNumber <= 5) {
+                newDeck.push({ type: 'artifact', gemValue: BASE_DECK_CONFIG.ARTIFACT_VALUES[expeditionNumber-1] });
+            }
 
             shuffle(newDeck);
             return newDeck;
         }
 
-        /**
-         * Funzione per estrarre la prossima carta dal mazzo.
-         */
         function drawCard() {
             if (!roundActive || deck.length === 0) return;
 
             const card = deck.pop();
             tunnel.push(card);
-            
             let roundEnd = false;
-            let logText = '';
-            let logColor = '';
-            const cardIndex = tunnel.length;
+            let logText = "";
 
-            // 1. Gestione della carta estratta
             if (card.type === 'hazard') {
                 const hazardName = card.value;
                 currentHazardCounts[hazardName] = (currentHazardCounts[hazardName] || 0) + 1;
                 
                 if (currentHazardCounts[hazardName] === 2) {
-                    // ** LOGICA CHIAVE: Doppio Pericolo **
                     roundEnd = true;
-                    
-                    // ** LOGICA CHIAVE: Rimozione Permanente di 1 Carta **
-                    removedHazards[hazardName] = (removedHazards[hazardName] || 0) + 1;
-                    
-                    logText = `🚨 Stanza ${cardIndex}: **DOPPIO PERICOLO ${hazardName.toUpperCase()}!** Spedizione fallita. 1 carta "${hazardName}" è stata **rimossa definitivamente** dal mazzo.`;
-                    logColor = 'hazard';
-
+                    removedHazards[hazardName]++;
+                    logText = `<span class="hazard">🚨 DOPPIO PERICOLO ${hazardName.toUpperCase()}! Spedizione fallita.</span>`;
                 } else {
-                    logText = `⚠️ Stanza ${cardIndex}: Pericolo **${hazardName}** (1a volta).`;
-                    logColor = 'hazard';
+                    logText = `<span class="hazard">⚠️ Pericolo: ${hazardName} (1a volta).</span>`;
                 }
-
             } else if (card.type === 'treasure') {
-                const newGems = card.value;
-                const gemsPerPlayer = Math.floor(newGems / numPlayers);
-                const gemsRemaining = newGems % numPlayers;
-
-                card.remainingGems = gemsRemaining;
-                
-                logText = `💎 Stanza ${cardIndex}: Tesoro (${newGems} Gemme). Divise: ${gemsPerPlayer} a testa. Resto sul tavolo: **${gemsRemaining} Gemme**.`;
-                logColor = 'treasure';
-
+                const gems = card.value;
+                const perPlayer = Math.floor(gems / numPlayers);
+                const table = gems % numPlayers;
+                logText = `<span class="treasure">💎 Tesoro: ${gems} gemme.</span> ${perPlayer} a testa, ${table} sul tavolo.`;
             } else if (card.type === 'artifact') {
-                foundArtifacts.push(card.gemValue);
-                logText = `✨ Stanza ${cardIndex}: Artefatto (Valore ${card.gemValue}). Collezionato!`;
-                logColor = 'info';
+                logText = `<span class="info">✨ Artefatto trovato (Valore ${card.gemValue}).</span>`;
             }
 
-            logMessage(logText, logColor);
-
-            if (deck.length === 0 && !roundEnd) {
-                roundEnd = true;
-                logMessage(`🔚 Tunnel Esplorato! Tutte le carte estratte.`, 'end');
-            }
-
-            if (roundEnd) {
-                endExpedition();
-            }
-
+            logMessage(logText);
+            if (roundEnd) endExpedition();
             updateUI();
         }
 
-        /**
-         * Funzione principale per iniziare una nuova spedizione (round).
-         */
         function startNewExpedition() {
-            if (expeditionNumber >= MAX_EXPEDITIONS) {
-                logMessage('❌ **GIOCO TERMINATO!** Hai giocato 5 spedizioni.', 'end');
-                primaryActionButton.disabled = true;
-                return;
-            }
-
+            if (expeditionNumber >= MAX_EXPEDITIONS) return;
             expeditionNumber++;
             deck = createAndShuffleDeck();
             tunnel = [];
             currentHazardCounts = {};
             roundActive = true;
             
-            // Calcoli per il log
-            const totalHazardsRemaining = Object.keys(removedHazards).reduce((sum, hazard) => {
-                return sum + (MAX_HAZARDS_PER_TYPE - (removedHazards[hazard] || 0));
-            }, 0);
-            
-            const removedSummary = Object.keys(removedHazards)
-                .filter(h => removedHazards[h] > 0)
-                .map(h => `${h}: ${removedHazards[h]} rimosse`)
-                .join(', ');
-            
-            let message = `--- NUOVA SPEDIZIONE **${expeditionNumber}** ---<br>`;
-            message += `Carte totali nel mazzo: **${deck.length}**. Pericoli totali: ${totalHazardsRemaining}.`;
-            if (removedSummary) {
-                 message += `<br>Stato Pericoli Permanenti: ${removedSummary}`;
-            }
-
-            logMessage(message, 'info');
-
+            logMessage(`<span class="info">Inizio Spedizione ${expeditionNumber}.</span> Mazzo pronto con ${deck.length} carte.`);
             updateUI();
         }
 
-        /**
-         * Termina la spedizione corrente.
-         */
         function endExpedition() {
             roundActive = false;
-            updateUI();
         }
 
-        /**
-         * Aggiorna lo stato visivo dei pulsanti.
-         */
         function updateUI() {
             if (expeditionNumber === MAX_EXPEDITIONS && !roundActive) {
-                primaryActionButton.textContent = 'Gioco Terminato (Max 5 spedizioni)';
+                primaryActionButton.textContent = 'Gioco Terminato';
                 primaryActionButton.disabled = true;
             } else if (roundActive) {
-                primaryActionButton.textContent = `Estrai Carta (Mazzo: ${deck.length})`;
-                primaryActionButton.disabled = deck.length === 0;
+                primaryActionButton.textContent = `Estrai Prossima Carta (Residue: ${deck.length})`;
             } else {
-                primaryActionButton.textContent = `Inizia Nuova Spedizione (${expeditionNumber + 1})`;
-                primaryActionButton.disabled = false;
+                primaryActionButton.textContent = `Inizia Spedizione ${expeditionNumber + 1}`;
             }
         }
-        
-        // --- Gestione Eventi ---
-        primaryActionButton.addEventListener('click', () => {
-            if (roundActive) {
-                drawCard();
-            } else {
-                startNewExpedition();
-            }
-        });
 
-        // Inizializzazione iniziale
-        window.onload = updateUI;
+        primaryActionButton.addEventListener('click', () => {
+            if (roundActive) drawCard();
+            else startNewExpedition();
+        });
     </script>
 </body>
 </html>
